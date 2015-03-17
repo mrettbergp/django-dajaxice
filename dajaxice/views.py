@@ -7,6 +7,7 @@ from django.http import HttpResponse, Http404
 
 from dajaxice.exceptions import FunctionNotCallableError
 from dajaxice.core import dajaxice_functions, dajaxice_config
+from urllib.parse import unquote
 
 log = logging.getLogger('dajaxice')
 
@@ -17,7 +18,7 @@ def safe_dict(d):
     http://www.gossamer-threads.com/lists/python/bugs/684379
     """
     if isinstance(d, dict):
-        return dict([(k.encode('utf-8'), safe_dict(v)) for k, v in d.iteritems()])
+        return dict([(k, safe_dict(v)) for k, v in d.items()])
     elif isinstance(d, list):
         return [safe_dict(x) for x in d]
     else:
@@ -36,7 +37,7 @@ class DajaxiceRequest(View):
         if dajaxice_functions.is_callable(name, request.method):
 
             function = dajaxice_functions.get(name)
-            data = getattr(request, function.method).get('argv', '')
+            data = unquote(request.body.decode('utf-8').split('=')[1])
 
             # Clean the argv
             if data != 'undefined':
